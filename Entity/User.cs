@@ -16,6 +16,6 @@ namespace To_Do.Entity
 
         public string? Role { get; set; } = "user";
 
-        public List<ToDoTask>? Tasks { get; set; }; 
+        public List<ToDoTask>? Tasks { get; set; }
     }
 }
