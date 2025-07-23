@@ -14,6 +14,8 @@ namespace To_Do.Entity
 
         public string? RefreshToken { get; set; }
 
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
         public string? Role { get; set; } = "user";
 
         public List<ToDoTask>? Tasks { get; set; }

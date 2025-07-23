@@ -1,4 +1,7 @@
-﻿using Org.BouncyCastle.Crypto.Generators;
+﻿using Microsoft.AspNetCore.Identity;
+using Org.BouncyCastle.Crypto.Generators;
+using To_Do.Authentication;
+using To_Do.Authntication;
 using To_Do.Data.Modle.Dto;
 using To_Do.Data.Repositery;
 using To_Do.Entity;
@@ -23,6 +26,9 @@ namespace To_Do.Services
     public class UserServices : IUserServices
     {
         private readonly IUserRepositery _userRepositery;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly ITokenGenerater _tokenGenerater;
+
         public UserServices(IUserRepositery userRepositery)
         {
             _userRepositery = userRepositery;
@@ -32,23 +38,24 @@ namespace To_Do.Services
             if (requestDto == null) throw  new  ArgumentNullException(nameof(requestDto));
 
             if (string.IsNullOrEmpty(requestDto.Password)){            
-            throw new ArgumentException("Password can not be null or empty",nameof(requestDto.Password));
+            throw new ArgumentNullException(requestDto.Password,"Password can not be null or empty");
             }
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.Password ?? string.Empty);
+            var passwordHash = _passwordHasher.Hash(requestDto.Password);
             var user = new User()
             {
                 UserName = requestDto.UserName,
                 Email = requestDto.Email,
                 PasswordHash = passwordHash
             };
-            await _userRepositery.AddAsync(user);
             TokenResponce tokenResponse = new TokenResponce()
             {
                 // just for test 
-                Access_Token = "Generated", //To Do: replace with actual token generation logic
-                Refresh_Token = "Generated"
+                Access_Token = _tokenGenerater.CreateAccessToken(user), //To Do: replace with actual token generation logic
+                Refresh_Token = _tokenGenerater.CreateRefreshToken(),
             };
-            return  tokenResponse;
+            user.RefreshToken = tokenResponse.Refresh_Token;
+            await _userRepositery.AddAsync(user);  // this will save the user in the database
+            return tokenResponse;
         }
 
         public async Task<bool> DeleteUser(Guid id)
