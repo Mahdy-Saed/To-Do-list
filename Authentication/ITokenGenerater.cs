@@ -1,8 +1,10 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using To_Do.Authentication;
 using To_Do.Entity;
 
 namespace To_Do.Authntication
@@ -14,12 +16,12 @@ namespace To_Do.Authntication
 
           string CreateRefreshToken();
 
-          bool ValidateRefreshToken(string RefreshToken);
+          bool ValidateRefreshToken(User user,string RefreshToken);
 
 
     }
 
-    public class TokenGenerater(IConfiguration configuration) : ITokenGenerater  // ioption is also good option rather than Iconfiguraion
+    public class TokenGenerater(IOptions<JwtSettings> _jwtsetting) : ITokenGenerater  // ioption is also good option rather than Iconfiguraion
                                                                                  // and can generate specific configurations.
     {
         public string CreateAccessToken(User User)
@@ -27,12 +29,12 @@ namespace To_Do.Authntication
            
             List<Claim> claims = new List<Claim>{
                 new Claim(ClaimTypes.NameIdentifier,User.Id.ToString()),
-                new Claim(ClaimTypes.Name,User.UserName),
-                new Claim(ClaimTypes.Email,User.Email),
-                new Claim(ClaimTypes.Role,User.Role),
+                new Claim(ClaimTypes.Name,User.UserName!),
+                new Claim(ClaimTypes.Email,User.Email!),
+                new Claim(ClaimTypes.Role,User.Role !),
             };
 
-            byte[] key = Encoding.UTF8.GetBytes(configuration.GetSection("jwt:key").Value !); // GET THE KEY FROM THE SETTING
+            byte[] key = Encoding.UTF8.GetBytes(_jwtsetting.Value.Key !); // GET THE KEY FROM THE SETTING .value for access the Original Class 
 
             var securityKey = new SymmetricSecurityKey(key);
 
@@ -40,12 +42,11 @@ namespace To_Do.Authntication
 
 
             var tokenDescription = new JwtSecurityToken(
-                    issuer: "YourApp",
-                    audience: "ClientApp",
+                    issuer: _jwtsetting.Value.Issure,
+                    audience: _jwtsetting.Value.adience,
                      claims: claims,
-                    expires: DateTime.UtcNow.AddHours(1),
+                    expires: DateTime.UtcNow.AddMinutes(_jwtsetting.Value.durationInMinutes),
                     signingCredentials: credentials
-                    
                     );
 
 
@@ -55,7 +56,7 @@ namespace To_Do.Authntication
         public string CreateRefreshToken()
         {
             byte[] arayNumber = new byte[32]; // 32 byte its 256 bits
-                                              // 
+
 
             using(var random=RandomNumberGenerator.Create())
             {
@@ -67,9 +68,14 @@ namespace To_Do.Authntication
 
         }
 
-        public bool ValidateRefreshToken(string RefreshToken)
+        public bool ValidateRefreshToken(User user,string RefreshToken)
         {
-            throw new NotImplementedException();
+
+            if (user.RefreshToken != RefreshToken) return false;
+
+            if (user.RefreshToken is null || user.RefreshTokenExpiryTime <= DateTime.UtcNow) return false;
+
+            return true; // if the refresh token is valid and not expired then return true
         }
     }
 

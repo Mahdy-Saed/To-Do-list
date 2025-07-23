@@ -35,7 +35,6 @@ namespace To_Do.Authntication
         public bool verify(string password, string hashedPassword)
         {
              string[] parts = hashedPassword.Split('-');
-
             byte[] salt = Convert.FromHexString(parts[1]);
             byte[] hash = Convert.FromHexString(parts[0]);
             byte[] inputHashed = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, algorithmName, keysize);
