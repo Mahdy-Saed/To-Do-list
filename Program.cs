@@ -9,10 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
-
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("jwtsettings"));
 builder.Services.AddScoped<ITokenGenerater, TokenGenerater>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserRepositery, UserRepositery>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddDbContext<ToDoContext>(options =>
@@ -37,4 +37,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-  app.Run();
+app.Run();

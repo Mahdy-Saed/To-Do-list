@@ -15,7 +15,7 @@ namespace To_Do.Services
         Task<User?> GetUserById(Guid id);
 
 
-        Task<IEnumerable<User>> GetAllUsers(User user);
+        Task<IEnumerable<User>> GetAllUsers();
         Task<User?> UpdateUser(Guid id, User user);
 
 
@@ -26,11 +26,14 @@ namespace To_Do.Services
     public class UserServices : IUserServices
     {
         private readonly IUserRepositery _userRepositery;
-        private readonly IPasswordHasher _passwordHasher;
+        private readonly   IPasswordHasher _passwordHasher;
         private readonly ITokenGenerater _tokenGenerater;
 
-        public UserServices(IUserRepositery userRepositery)
+        
+        public UserServices(IUserRepositery userRepositery,IPasswordHasher passwordHaser,ITokenGenerater tokenGenerater)
         {
+            _passwordHasher = passwordHaser ?? throw new ArgumentNullException(nameof(passwordHaser));
+            _tokenGenerater = tokenGenerater ?? throw new ArgumentNullException(nameof(tokenGenerater));
             _userRepositery = userRepositery;
         }
         public async Task<TokenResponce?> CreateUser(RequestDto  requestDto)
@@ -47,20 +50,24 @@ namespace To_Do.Services
                 Email = requestDto.Email,
                 PasswordHash = passwordHash
             };
+            var   RefreshToken = _tokenGenerater.CreateRefreshToken();  
+            user.RefreshToken = RefreshToken;
+            await _userRepositery.AddAsync(user);
             TokenResponce tokenResponse = new TokenResponce()
             {
                 // just for test 
-                Access_Token = _tokenGenerater.CreateAccessToken(user), //To Do: replace with actual token generation logic
+                User_Id= user.Id,
+                Access_Token =  RefreshToken, //To Do: replace with actual token generation logic
                 Refresh_Token = _tokenGenerater.CreateRefreshToken(),
             };
             user.RefreshToken = tokenResponse.Refresh_Token;
-            await _userRepositery.AddAsync(user);  // this will save the user in the database
+             // this will save the user in the database
             return tokenResponse;
         }
 
         public async Task<bool> DeleteUser(Guid id)
         {
-            var user = _userRepositery.GetByIdAsync(id);
+            var user = await  _userRepositery.GetByIdAsync(id);
 
             if (user == null) return false;
 
@@ -69,19 +76,18 @@ namespace To_Do.Services
             return true;  
         }
 
-        public async Task<IEnumerable<User>> GetAllUsers(User user)
+        public async Task<IEnumerable<User>> GetAllUsers()
         { 
-
             return await _userRepositery.GetAllAsync();
         }
 
         public async Task<User?> GetUserById(Guid id)
         {
-            var user = _userRepositery.GetByIdAsync(id);
+            var user =await  _userRepositery.GetByIdAsync(id);
             
                 if(user is null) return  null;
                 
-                return await  user;
+                return    user;
 
         }
 
