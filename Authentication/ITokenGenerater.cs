@@ -21,9 +21,15 @@ namespace To_Do.Authntication
 
     }
 
-    public class TokenGenerater(IOptions<JwtSettings> _jwtsetting) : ITokenGenerater  // ioption is also good option rather than Iconfiguraion
+    public class TokenGenerater : ITokenGenerater  // ioption is also good option rather than Iconfiguraion
                                                                                  // and can generate specific configurations.
     {
+        private readonly IOptions<JwtSettings> _jwtsetting; // this is the setting that we will use to generate the token
+        public TokenGenerater(IOptions<JwtSettings> jwtsetting)
+        {
+            _jwtsetting = jwtsetting ?? throw new ArgumentNullException(nameof(jwtsetting));
+        }
+
         public string CreateAccessToken(User User)
         {
            
