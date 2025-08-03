@@ -22,7 +22,7 @@ namespace To_Do.Entity
         public TaskPriority?  Priority { get; set; }
 
 
-        public DateTime  CreateAt = DateTime.UtcNow;
+        public  DateTime CreateAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? DueDate { get;  set; }
 

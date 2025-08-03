@@ -20,50 +20,56 @@ namespace To_Do.Controllers
             _userServices = userServices;
         }
 
+
+        [ApiExplorerSettings(GroupName = "1-Register")]
         [HttpPost("Register")] //api/User/Register
         [ProducesResponseType(201)]
-        public async Task<IActionResult> Register([FromBody]RequestDto requestDto)
+        public async Task<IActionResult> Register([FromBody] RequestDto request)
         {
-            if(requestDto == null)
+            if (request == null)
             {
                 return BadRequest("Request cannot be null");
             }
-            var tokenResponce = await _userServices.CreateUser(requestDto);
+            var tokenResponce = await _userServices.CreateUser(request);
 
-            if(tokenResponce is null)
+            if (tokenResponce is null)
             {
-                return BadRequest("Create User Faild");
+                return BadRequest("Create User Faild,Password or Email Invalid");
             }
-            return  CreatedAtAction(nameof(GetUser), new { id =tokenResponce.User_Id}, tokenResponce); // this will return the created user with the token
+            return CreatedAtAction(nameof(GetUser), new { id = tokenResponce.User_Id }, tokenResponce); // this will return the created user with the token
 
 
         }
 
-
+      [ApiExplorerSettings(GroupName = "2-Login")]
+        [HttpPost("login")] //api/User/login
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginDto)
+        {
+            if (loginDto == null)
+            {
+                return BadRequest("Login request cannot be null");
+            }
+            var tokenResponce = await _userServices.Login(loginDto);
+            if (tokenResponce is null)
+            {
+                return Unauthorized("Invalid email or password");
+            }
+            return Ok(tokenResponce);
+        }
         
 
-
-
-        [HttpGet("{id}")]  //api/User/Guid
-      public  async Task<ActionResult<UserDto>> GetUser(Guid id) // can used with type that contain argument inside it like Task<T>
-        {
-           var user = await _userServices.GetUserById(id);
-            if (user is null) return BadRequest("User not found");
-
-            //must add mapper
-        return Ok(user);
-        }
-
+        [ApiExplorerSettings(GroupName = "3-Users")]
         [HttpGet("Users")]  //api/User/Guid
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers() // can used with type that contain argument inside it like Task<T>
         {
             var users =  await  _userServices.GetAllUsers();
 
-            List<UserDto> userDtos = users.Select(u => new UserDto
+            List<UserResponceDto> userDtos = users.Select(u => new UserResponceDto()
             {
                 Id = u.Id,
-                UserName = u.UserName,
+                Username = u.UserName,
                 Email = u.Email,
                 Role = u.Role,
                 // Add other properties as needed
@@ -71,10 +77,21 @@ namespace To_Do.Controllers
             return Ok(userDtos);
         }
 
+        [ApiExplorerSettings(GroupName = "4-User")]
+        [HttpGet("{id}")]  //api/User/Guid
+      public  async Task<ActionResult<UserResponceDto>> GetUser(Guid id) // can used with type that contain argument inside it like Task<T>
+        {
+           var user = await _userServices.GetUserById(id);
+            if (user is null) return NotFound("User not found");
+
+            //must add mapper
+        return Ok(user);
+        }
 
 
+
+        [ApiExplorerSettings(GroupName = "5-Update")]
         [HttpPut("{id}")] //api/User/Guid
-
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserDto UserDto)
         {
             if (UserDto == null)
@@ -84,7 +101,7 @@ namespace To_Do.Controllers
             var user = new User()
             {
                 Id = id,
-                UserName = UserDto.UserName,
+                UserName =UserDto.UserName,
                 Email = UserDto.Email,
                 Role = UserDto.Role
                 // Add other properties as needed
@@ -97,10 +114,9 @@ namespace To_Do.Controllers
             return Ok(updatedUser);
         }
 
-
+        [ApiExplorerSettings(GroupName = "6-Patch")]
         [HttpPatch("{id}")] //api/User/Guid
-
-        public async Task<IActionResult> UpdateSpcefic(Guid id,JsonPatchDocument<RequestDto > patchDocument)
+        public async Task<IActionResult> UpdateSpcefic(Guid id,JsonPatchDocument<RequestDto> patchDocument)
         {
             var user = await _userServices.GetUserById(id);
 
@@ -110,7 +126,7 @@ namespace To_Do.Controllers
             {
                 return BadRequest("Request cannot be null");
             }
-            RequestDto usetToDto = new RequestDto
+            RequestDto usetToDto = new RequestDto()
             {
                 UserName = user.UserName,
                 Email = user.Email
@@ -132,7 +148,17 @@ namespace To_Do.Controllers
 
         }
 
-
+        [ApiExplorerSettings(GroupName = "7-Delete")]
+        [HttpDelete("{id}")] //api/User/Guid
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            var isDeleted = await _userServices.DeleteUser(id);
+            if (!isDeleted)
+            {
+                return NotFound("User not found");
+            }
+            return NoContent(); // 204 No Content
+        }
 
 
 

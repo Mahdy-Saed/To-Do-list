@@ -15,6 +15,7 @@ namespace To_Do.Data.Modle.Dto
         [ValidateEmail(ErrorMessage = "Invalid Email Address")]
         public string? Email { get; set; }
 
+        [MinLength(8, ErrorMessage = "password can not be less than 8 ")]
         public string? Password { get; set; }
 
     }

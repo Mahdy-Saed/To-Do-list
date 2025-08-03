@@ -5,19 +5,24 @@ namespace To_Do.Data.Modle.Dto
 {
     public class UserDto
     {
-        public Guid Id { get; set; }
 
-        [Required(ErrorMessage ="User name can not be Empty")]
-        [StringLength(50, ErrorMessage = "User name must be less than 50 characters")]
-        public string? UserName { get; set; }
+        
+            public Guid Id { get; set; }
 
-        [Required(ErrorMessage = "Email can not be Empty")]
+            [Required(ErrorMessage = "User name can not be Empty")]
+            [StringLength(50, ErrorMessage = "User name must be less than 50 characters")]
+            public string? UserName { get; set; }
 
-        [ValidateEmail(ErrorMessage = "Invalid Email Address")]
-        public string? Email { get; set; }   
+            [Required(ErrorMessage = "Email can not be Empty")]
+
+            [ValidateEmail(ErrorMessage = "Invalid Email Address")]
+            public string? Email { get; set; }
 
 
-        public string? Role { get; set; }     
+            public string? Role { get; set; }
 
+         
     }
+
 }
+ 

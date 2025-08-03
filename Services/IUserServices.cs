@@ -14,6 +14,7 @@ namespace To_Do.Services
 
         Task<User?> GetUserById(Guid id);
 
+        Task<LoginResponceDto?>Login(LoginRequestDto loginRequestDto);
 
         Task<IEnumerable<User>> GetAllUsers();
         Task<User?> UpdateUser(Guid id, User user);
@@ -43,6 +44,12 @@ namespace To_Do.Services
             if (string.IsNullOrEmpty(requestDto.Password)){            
             throw new ArgumentNullException(requestDto.Password,"Password can not be null or empty");
             }
+            var existingUser = await _userRepositery.GetByEmail(requestDto.Email!);  // checking if the user is already registered
+            if(existingUser != null)
+            {
+                return null; // or throw an exception if you prefer
+            }
+
             var passwordHash = _passwordHasher.Hash(requestDto.Password);
             var user = new User()
             {
@@ -52,6 +59,7 @@ namespace To_Do.Services
             };
             var   RefreshToken = _tokenGenerater.CreateRefreshToken();  
             user.RefreshToken = RefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // set the expiry time for the refresh token
             await _userRepositery.AddAsync(user);
             TokenResponce tokenResponse = new TokenResponce()
             {
@@ -90,6 +98,43 @@ namespace To_Do.Services
                 return    user;
 
         }
+
+
+
+
+        public async Task<LoginResponceDto?> Login(LoginRequestDto loginRequestDto)
+        {
+            User? user = await _userRepositery.GetByEmail(loginRequestDto.Email!);
+            if (user is null)  return null;
+
+
+            var passwordVerificationResult = _passwordHasher.verify(loginRequestDto.Password!, user.PasswordHash!);
+
+            if (!passwordVerificationResult) return null;
+
+            LoginResponceDto Result = new LoginResponceDto()
+            {
+                Token = new TokenResponce()
+                {
+                    User_Id= user.Id,
+                    Refresh_Token = _tokenGenerater.CreateRefreshToken(),
+                    Access_Token = _tokenGenerater.CreateAccessToken(user),
+                },
+                User = new UserDto()
+                {
+                    Id = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Role = user.Role
+                }
+            };
+            await _userRepositery.UpdateAsync(user); // update the user with the new refresh token
+            return Result; // return the login response with the token and user information
+        }
+
+
+
+
 
         public async Task<User?> UpdateUser(Guid id, User userRequest)
         {
