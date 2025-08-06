@@ -120,10 +120,10 @@ namespace To_Do.Services
                     Refresh_Token = _tokenGenerater.CreateRefreshToken(),
                     Access_Token = _tokenGenerater.CreateAccessToken(user),
                 },
-                User = new UserDto()
+                User = new UserResponceDto()
                 {
                     Id = user.Id,
-                    UserName = user.UserName,
+                    Username= user.UserName,
                     Email = user.Email,
                     Role = user.Role
                 }

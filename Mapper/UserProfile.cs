@@ -8,22 +8,15 @@ namespace To_Do.Mapper
     {
         public UserProfile()
         {
-            CreateMap<User, UserResponceDto>();
-
-            CreateMap<LoginRequestDto, User>();
-
-            CreateMap<RequestDto, User>();
-
-            CreateMap<User, UserDto>()
+             CreateMap<User,  UserResponceDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName));
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role));
 
-            CreateMap<UserDto, User>();
+            CreateMap<UpdateRequest, User>();
 
-            CreateMap<User, UserResponceDto>();
-                 
-
+            CreateMap<User, UpdateRequest>();
 
         }
 

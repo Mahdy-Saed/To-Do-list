@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens.Experimental;
@@ -15,9 +16,11 @@ namespace To_Do.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserServices _userServices;
-        public UserController(IUserServices userServices)
+        private readonly IMapper _mapper;
+        public UserController(IUserServices userServices,IMapper mapper)
         {
             _userServices = userServices;
+            _mapper = mapper;
         }
 
 
@@ -66,15 +69,9 @@ namespace To_Do.Controllers
         {
             var users =  await  _userServices.GetAllUsers();
 
-            List<UserResponceDto> userDtos = users.Select(u => new UserResponceDto()
-            {
-                Id = u.Id,
-                Username = u.UserName,
-                Email = u.Email,
-                Role = u.Role,
-                // Add other properties as needed
-            }).ToList();
-            return Ok(userDtos);
+            var usersResponce = _mapper.Map<List<UserResponceDto>>(users);
+            
+            return Ok(usersResponce);
         }
 
         [ApiExplorerSettings(GroupName = "4-User")]
@@ -84,66 +81,63 @@ namespace To_Do.Controllers
            var user = await _userServices.GetUserById(id);
             if (user is null) return NotFound("User not found");
 
-            //must add mapper
-        return Ok(user);
+            var userDto = _mapper.Map<UserResponceDto>(user); // map the user to UserResponceDto
+                                                              //must add mapper
+            return Ok(userDto);
         }
 
 
 
         [ApiExplorerSettings(GroupName = "5-Update")]
         [HttpPut("{id}")] //api/User/Guid
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserDto UserDto)
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateRequest UpdateRequest)
         {
-            if (UserDto == null)
+            if (UpdateRequest == null)
             {
                 return BadRequest("User cannot be null");
             }
-            var user = new User()
+            var userExists = await _userServices.GetUserById(id);
+            if(userExists == null)
             {
-                Id = id,
-                UserName =UserDto.UserName,
-                Email = UserDto.Email,
-                Role = UserDto.Role
-                // Add other properties as needed
-            };
-            var updatedUser = await _userServices.UpdateUser(id, user);
+                return NotFound("User not found");
+            }
+            _mapper.Map(UpdateRequest, userExists);
+            var updatedUser = await _userServices.UpdateUser(id, userExists);
             if (updatedUser == null)
             {
                 return NotFound("User not found");
             }
-            return Ok(updatedUser);
+            var responce = _mapper.Map<UserResponceDto>(updatedUser);
+
+            return Ok(responce);
         }
 
         [ApiExplorerSettings(GroupName = "6-Patch")]
         [HttpPatch("{id}")] //api/User/Guid
-        public async Task<IActionResult> UpdateSpcefic(Guid id,JsonPatchDocument<RequestDto> patchDocument)
+        public async Task<IActionResult> UpdateSpcefic(Guid id,JsonPatchDocument<UpdateRequest> patchDocument)
         {
-            var user = await _userServices.GetUserById(id);
+            var userEntity = await _userServices.GetUserById(id);
 
-            if (user is null) return NotFound("User not found");
+            if (userEntity is null) return NotFound("User not found");
 
             if (patchDocument is null)
             {
                 return BadRequest("Request cannot be null");
             }
-            RequestDto usetToDto = new RequestDto()
-            {
-                UserName = user.UserName,
-                Email = user.Email
-            };
-            patchDocument.ApplyTo(usetToDto, ModelState);
+          var userDto = _mapper.Map<UpdateRequest>(userEntity); // map the user to UpdateRequest
+            patchDocument.ApplyTo(userDto, ModelState);
 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await _userServices.UpdateUser(id, new User
-            {
-                Id = id,
-                UserName = usetToDto.UserName,
-                Email = usetToDto.Email
-            });
+            _mapper.Map(userDto, userEntity);
+
+            var Updated = await _userServices.UpdateUser(id, userEntity);
+
+            var result = _mapper.Map<UserResponceDto>(Updated);
+
             return Ok(result);
 
         }
@@ -157,7 +151,7 @@ namespace To_Do.Controllers
             {
                 return NotFound("User not found");
             }
-            return NoContent(); // 204 No Content
+            return NoContent(); // 204 No Content mean every thing is ok and the user is deleted.
         }
 
 

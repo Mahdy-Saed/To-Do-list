@@ -17,6 +17,7 @@ builder.Services.AddScoped<IUserRepositery, UserRepositery>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddDbContext<ToDoContext>(options =>             //add db context
    options.UseNpgsql(builder.Configuration.GetConnectionString("ToDoConection")));
+builder.Services.AddAutoMapper(typeof(Program)); 
 //builder.Services.AddSingleton<IUserServices, UserServices>(); singletone is for In memory HeHaHa
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -38,8 +39,7 @@ c.DocInclusionPredicate((docname, apiDesc) =>
 
 });
 
-
-builder.Services.AddAutoMapper(typeof(Program).Assembly); // Register AutoMapper
+  // Register AutoMapper
 
 var app = builder.Build();
 
