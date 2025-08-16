@@ -29,12 +29,13 @@ builder.Services.AddScoped<ITokenGenerater, TokenGenerater>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserRepositery, UserRepositery>();
 builder.Services.AddScoped<IUserServices, UserServices>();
-
 builder.Services.AddDbContext<ToDoContext>(options =>
    options.UseNpgsql(builder.Configuration.GetConnectionString("ToDoConection")));
 
 builder.Services.AddAutoMapper(typeof(Program));
 
+builder.Services.AddScoped<ITaskRepositer, TaskRepositer>();
+builder.Services.AddScoped<ITaskServices, TaskServices>();
 // ✅ إعدادات JWT
 var jwtSettings = builder.Configuration.GetSection("jwtsettings");
 var key = jwtSettings["Key"];
