@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using To_Do.Data.Modle.Dto;
-using To_Do.Data.Modle.Dto.TaskDto;
 using To_Do.Entity;
 using To_Do.Services;
 
@@ -66,7 +65,7 @@ namespace To_Do.Controllers
         // this will allow only users with the role of user to access this endpoint
         [ApiExplorerSettings(GroupName = "3-Users")]
         [Authorize(Roles = "User")] // this will allow only users with the role of user to access this endpoint
-        [HttpGet("Users")]  //api/User/Guid
+        [HttpGet("Users")]  //api/User/Users
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers() // can used with type that contain argument inside it like Task<T>
         {
