@@ -1,4 +1,9 @@
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 using To_Do.Authentication;
 using To_Do.Authntication;
 using To_Do.Data;
@@ -7,39 +12,113 @@ using To_Do.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ✅ تمكين عرض معلومات حساسة في الأخطاء - مهم جداً في مرحلة التطوير
+IdentityModelEventSource.ShowPII = true;
 
-builder.Services.AddControllers().AddNewtonsoftJson();    //json patch
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("jwtsettings")); //Ioption pattern
-builder.Services.AddScoped<ITokenGenerater, TokenGenerater>();//add services
+// ✅ إعدادات Logging تفصيلي
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddFilter("Microsoft.AspNetCore.Authentication.JwtBearer", LogLevel.Trace);
+builder.Logging.AddFilter("Microsoft.IdentityModel", LogLevel.Trace);
+
+// Add services to the container.
+builder.Services.AddControllers().AddNewtonsoftJson();    // JSON Patch
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("jwtsettings")); // IOptions pattern
+builder.Services.AddScoped<ITokenGenerater, TokenGenerater>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserRepositery, UserRepositery>();
 builder.Services.AddScoped<IUserServices, UserServices>();
-builder.Services.AddDbContext<ToDoContext>(options =>             //add db context
+
+builder.Services.AddDbContext<ToDoContext>(options =>
    options.UseNpgsql(builder.Configuration.GetConnectionString("ToDoConection")));
-builder.Services.AddAutoMapper(typeof(Program)); 
-//builder.Services.AddSingleton<IUserServices, UserServices>(); singletone is for In memory HeHaHa
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => 
+
+builder.Services.AddAutoMapper(typeof(Program));
+
+// ✅ إعدادات JWT
+var jwtSettings = builder.Configuration.GetSection("jwtsettings");
+var key = jwtSettings["Key"];
+
+builder.Services.AddAuthentication(options =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
+        ClockSkew = TimeSpan.Zero
+    };
+
+    // ✅ تمكين التفاصيل في حالة فشل المصادقة
+    options.IncludeErrorDetails = true;
+
+    // ✅ تسجيل الأحداث لمزيد من التشخيص
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"🔴 Authentication failed: {context.Exception.GetType().Name} - {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"✅ Token validated for: {context.Principal.Identity?.Name}");
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "To-Do API",
         Version = "v1",
         Description = "API for managing To Do items",
     });
-c.DocInclusionPredicate((docname, apiDesc) =>
-{
-    return docname == "v1"; // Grouping by version
 
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Just Enter Your Token Here"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+
+    c.DocInclusionPredicate((docname, apiDesc) =>
+    {
+        return docname == "v1";
+    });
+
+    c.OrderActionsBy(endpoint => endpoint.GroupName ?? "");
 });
-    c.OrderActionsBy(endpoint => endpoint.GroupName ?? "");  // this mean each point in contrller with group name will be ordered
-
-
-});
-
-  // Register AutoMapper
 
 var app = builder.Build();
 
@@ -47,7 +126,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c=>
+    app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
     });
@@ -55,6 +134,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication(); // ✅ مهم قبل Authorization
 app.UseAuthorization();
 
 app.MapControllers();

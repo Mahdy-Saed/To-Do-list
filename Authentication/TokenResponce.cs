@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json;
-using System.Text.Json.Serialization;
+﻿    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
-namespace To_Do.Authentication
-{
-    public class TokenResponce
+    namespace To_Do.Authentication
     {
-         public Guid? User_Id { get; set; }
-        public string? Access_Token {get; set;}
+        public class TokenResponce
+        {
+             public Guid? User_Id { get; set; }
+            public string? Access_Token {get; set;}
 
-        public string? Refresh_Token { get; set; }
+            public string? Refresh_Token { get; set; }
 
+        }
     }
-}

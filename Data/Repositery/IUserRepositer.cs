@@ -21,6 +21,9 @@ namespace To_Do.Data.Repositery
 
         Task DeleteAsync(Guid id);
 
+        Task DeleteAllAsync();
+
+
     }
 
     public class UserRepositery : IUserRepositery
@@ -65,6 +68,12 @@ namespace To_Do.Data.Repositery
         {
             //return only one record that have this Email
            return await _context.Users.SingleOrDefaultAsync(u=>u.Email == email);  
+        }
+
+        public async Task DeleteAllAsync()
+        {
+            _context.Users.RemoveRange(_context.Users);
+            await _context.SaveChangesAsync();
         }
     }
 

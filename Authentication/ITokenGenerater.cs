@@ -48,10 +48,10 @@ namespace To_Do.Authntication
 
 
             var tokenDescription = new JwtSecurityToken(
-                    issuer: _jwtsetting.Value.Issure,
-                    audience: _jwtsetting.Value.adience,
+                    issuer: _jwtsetting.Value.Issuer,
+                    audience: _jwtsetting.Value.Audience,
                      claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(_jwtsetting.Value.durationInMinutes),
+                    expires: DateTime.UtcNow.AddMinutes(_jwtsetting.Value.DurationInMinutes),
                     signingCredentials: credentials
                     );
 

@@ -22,6 +22,11 @@ namespace To_Do.Services
 
         Task<bool> DeleteUser(Guid id);
 
+        Task<bool> DeleteAllUser();
+
+
+        Task<bool> ChangePasswordAsync(Guid userID,string CurrentPassword,string NewPassword);
+
 
     }
     public class UserServices : IUserServices
@@ -65,12 +70,18 @@ namespace To_Do.Services
             {
                 // just for test 
                 User_Id= user.Id,
-                Access_Token =  RefreshToken, //To Do: replace with actual token generation logic
+                Access_Token = _tokenGenerater.CreateAccessToken(user), //To Do: replace with actual token generation logic
                 Refresh_Token = _tokenGenerater.CreateRefreshToken(),
             };
             user.RefreshToken = tokenResponse.Refresh_Token;
              // this will save the user in the database
             return tokenResponse;
+        }
+
+        public async Task<bool> DeleteAllUser()
+        {
+            await _userRepositery.DeleteAllAsync();
+            return true;
         }
 
         public async Task<bool> DeleteUser(Guid id)
@@ -135,7 +146,6 @@ namespace To_Do.Services
 
 
 
-
         public async Task<User?> UpdateUser(Guid id, User userRequest)
         {
           var user = await _userRepositery.GetByIdAsync(id);
@@ -147,6 +157,25 @@ namespace To_Do.Services
              
             await _userRepositery.UpdateAsync(user);
             return user;  //return the updated user
+        }
+
+        public async  Task<bool> ChangePasswordAsync(Guid userID, string CurrentPassword,string NewPassword)
+        {
+            var user = await _userRepositery.GetByIdAsync(userID);
+            if(user is null)
+            {
+                return false; // User not found
+            }   
+
+
+            if (!_passwordHasher.verify(CurrentPassword, user?.PasswordHash!))
+            {
+                return false;
+            }
+
+            user.PasswordHash = _passwordHasher.Hash(NewPassword!);
+            await _userRepositery.UpdateAsync(user);
+            return true;
         }
     }
 

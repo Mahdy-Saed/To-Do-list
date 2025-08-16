@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens.Experimental;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using To_Do.Data.Modle.Dto;
+using To_Do.Data.Modle.Dto.TaskDto;
 using To_Do.Entity;
 using To_Do.Services;
 
@@ -17,7 +19,7 @@ namespace To_Do.Controllers
     {
         private readonly IUserServices _userServices;
         private readonly IMapper _mapper;
-        public UserController(IUserServices userServices,IMapper mapper)
+        public UserController(IUserServices userServices, IMapper mapper)
         {
             _userServices = userServices;
             _mapper = mapper;
@@ -44,7 +46,7 @@ namespace To_Do.Controllers
 
         }
 
-      [ApiExplorerSettings(GroupName = "2-Login")]
+        [ApiExplorerSettings(GroupName = "2-Login")]
         [HttpPost("login")] //api/User/login
         [ProducesResponseType(200)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginDto)
@@ -60,25 +62,26 @@ namespace To_Do.Controllers
             }
             return Ok(tokenResponce);
         }
-        
 
+        // this will allow only users with the role of user to access this endpoint
         [ApiExplorerSettings(GroupName = "3-Users")]
+        [Authorize(Roles = "User")] // this will allow only users with the role of user to access this endpoint
         [HttpGet("Users")]  //api/User/Guid
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers() // can used with type that contain argument inside it like Task<T>
         {
-            var users =  await  _userServices.GetAllUsers();
+            var users = await _userServices.GetAllUsers();
 
             var usersResponce = _mapper.Map<List<UserResponceDto>>(users);
-            
+
             return Ok(usersResponce);
         }
 
         [ApiExplorerSettings(GroupName = "4-User")]
         [HttpGet("{id}")]  //api/User/Guid
-      public  async Task<ActionResult<UserResponceDto>> GetUser(Guid id) // can used with type that contain argument inside it like Task<T>
+        public async Task<ActionResult<UserResponceDto>> GetUser(Guid id) // can used with type that contain argument inside it like Task<T>
         {
-           var user = await _userServices.GetUserById(id);
+            var user = await _userServices.GetUserById(id);
             if (user is null) return NotFound("User not found");
 
             var userDto = _mapper.Map<UserResponceDto>(user); // map the user to UserResponceDto
@@ -97,7 +100,7 @@ namespace To_Do.Controllers
                 return BadRequest("User cannot be null");
             }
             var userExists = await _userServices.GetUserById(id);
-            if(userExists == null)
+            if (userExists == null)
             {
                 return NotFound("User not found");
             }
@@ -114,7 +117,7 @@ namespace To_Do.Controllers
 
         [ApiExplorerSettings(GroupName = "6-Patch")]
         [HttpPatch("{id}")] //api/User/Guid
-        public async Task<IActionResult> UpdateSpcefic(Guid id,JsonPatchDocument<UpdateRequest> patchDocument)
+        public async Task<IActionResult> UpdateSpcefic(Guid id, JsonPatchDocument<UpdateRequest> patchDocument)
         {
             var userEntity = await _userServices.GetUserById(id);
 
@@ -124,7 +127,7 @@ namespace To_Do.Controllers
             {
                 return BadRequest("Request cannot be null");
             }
-          var userDto = _mapper.Map<UpdateRequest>(userEntity); // map the user to UpdateRequest
+            var userDto = _mapper.Map<UpdateRequest>(userEntity); // map the user to UpdateRequest
             patchDocument.ApplyTo(userDto, ModelState);
 
             if (!ModelState.IsValid)
@@ -154,8 +157,39 @@ namespace To_Do.Controllers
             return NoContent(); // 204 No Content mean every thing is ok and the user is deleted.
         }
 
+        [ApiExplorerSettings(GroupName = "8-Delete")]
+        [HttpDelete("AllUsers")] //api/User/Guid
+        public async Task<IActionResult> DeleteAllUsers()
+        {
+            var users = await _userServices.GetAllUsers();
+            if (users is null || !users.Any())
+            {
+                return NotFound("No users found to delete");
+            }
+            await _userServices.DeleteAllUser();
+            return NoContent(); // 204 No Content mean every thing is ok and all users are deleted.
+        }
 
 
+        [ApiExplorerSettings(GroupName = "9-changePassword")]
+        [Authorize(Roles = "User")]
+        [HttpPatch("ChangePassword")] //api/User/ChangePassword
+        public async Task<IActionResult> ChangePassWord([FromBody] ChangePasswordDto passwordDto)
+        {
+            if (passwordDto == null)
+                return BadRequest("Change password request cannot be null");
 
+            var userid = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userid, out Guid userId))
+                return Unauthorized("Invalid user ID in token");
+
+            var changed = await _userServices.ChangePasswordAsync(userId, passwordDto.oldPassword!, passwordDto.newPassword!);
+
+            if (!changed)
+                return BadRequest("Old password is incorrect or user not found");
+
+            return Ok("Password changed successfully");
+        }
     }
 }
