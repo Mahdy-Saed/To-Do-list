@@ -1,6 +1,6 @@
-﻿using To_Do.Data.Modle.Dto.TaskDto;
+﻿using To_Do.Data.Dto.TaskDto;
 
-namespace To_Do.Data.Modle.Dto
+namespace To_Do.Data.Dto
 {
     public class UserTasksResponseDto
     {

@@ -1,4 +1,4 @@
-﻿namespace To_Do.Data.Modle.Dto
+﻿namespace To_Do.Data.Dto
 {
     public class ChangePasswordDto
     {

@@ -1,4 +1,4 @@
-﻿namespace To_Do.Data.Modle.Dto.TaskDto
+﻿namespace To_Do.Data.Dto.TaskDto
 {
     public class TaskResponceDto
     {

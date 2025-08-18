@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using To_Do.Data.Modle.Dto.TaskDto;
+using To_Do.Data.Dto.TaskDto;
 using To_Do.Entity;
 
 namespace To_Do.Mapper
@@ -15,7 +15,7 @@ namespace To_Do.Mapper
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ParseStatus(src.Status)))
                 .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => ParsePriority(src.Priority)))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.ReminderTime, opt => opt.Condition(src => src.ReminderEnabled));
+                .ForMember(dest => dest.ReminderTime, opt => opt.Condition(src => src.ReminderEnabled)); // in case the reminder is enabled
 
             CreateMap<UpdateTaskRequestDto, ToDoTask>()
              .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ParseStatus(src.Status)))

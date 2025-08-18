@@ -1,12 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace To_Do.Data.Modle.Dto.TaskDto
+namespace To_Do.Data.Dto.TaskDto
 {
-    public class UpdateTaskRequestDto
+      public class CreateTaskRequestDto
     {
-        [Required]
-        public int Id { get; set; }
-
         [Required]
         [MaxLength(100)]
         public string? Title { get; set; }
@@ -14,7 +11,7 @@ namespace To_Do.Data.Modle.Dto.TaskDto
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        public string? Status { get; set; }
+        public string? Status { get; set; }  // string بدل enum
 
         public string? Priority { get; set; }
 
@@ -23,6 +20,5 @@ namespace To_Do.Data.Modle.Dto.TaskDto
         public bool ReminderEnabled { get; set; }
 
         public DateTime? ReminderTime { get; set; }
-
     }
 }

@@ -2,8 +2,8 @@
 using Org.BouncyCastle.Crypto.Generators;
 using To_Do.Authentication;
 using To_Do.Authntication;
-using To_Do.Data.Modle.Dto;
-using To_Do.Data.Repositery;
+using To_Do.Data.Dto;
+ using To_Do.Data.Repositery;
 using To_Do.Entity;
 
 namespace To_Do.Services
@@ -14,9 +14,11 @@ namespace To_Do.Services
 
         Task<User?> GetUserById(Guid id);
 
+        Task<IEnumerable<User>> GetAllUsers();
+
+        Task<User?> GetUserTask(Guid id); // this will return the user with his tasks
         Task<LoginResponceDto?>Login(LoginRequestDto loginRequestDto);
 
-        Task<IEnumerable<User>> GetAllUsers();
         Task<User?> UpdateUser(Guid id, User user);
 
 
@@ -176,6 +178,18 @@ namespace To_Do.Services
             user.PasswordHash = _passwordHasher.Hash(NewPassword!);
             await _userRepositery.UpdateAsync(user);
             return true;
+        }
+
+        public async Task<User?> GetUserTask(Guid id)
+        {
+            var user = await _userRepositery.GetByIdAsync(id);
+            if (user is null) return null;
+
+            var userWithTasks = await _userRepositery.GetUserTask(id);
+            if (userWithTasks is null) return null;
+
+
+            return userWithTasks;
         }
     }
 

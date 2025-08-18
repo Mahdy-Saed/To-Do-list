@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using To_Do.Validaion;
 
-namespace To_Do.Data.Modle.Dto
+namespace To_Do.Data.Dto
 {
     public class UpdateRequest
     {

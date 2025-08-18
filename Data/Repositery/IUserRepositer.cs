@@ -16,6 +16,7 @@ namespace To_Do.Data.Repositery
 
         Task<User?> GetByIdAsync(Guid id);
 
+        Task<User?> GetUserTask(Guid id);
 
         Task UpdateAsync( User user);   
 
@@ -74,6 +75,11 @@ namespace To_Do.Data.Repositery
         {
             _context.Users.RemoveRange(_context.Users);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<User?> GetUserTask(Guid id)
+        {
+           return await _context.Users.Include(u => u.Tasks).FirstOrDefaultAsync(u=>u.Id==id);
         }
     }
 

@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using To_Do.Data.Modle.Dto;
+using To_Do.Data.Dto;
+using To_Do.Data.Dto.TaskDto;
 using To_Do.Entity;
 using To_Do.Services;
 
@@ -44,6 +45,7 @@ namespace To_Do.Controllers
 
 
         }
+
 
         [ApiExplorerSettings(GroupName = "2-Login")]
         [HttpPost("login")] //api/User/login
@@ -86,6 +88,25 @@ namespace To_Do.Controllers
             var userDto = _mapper.Map<UserResponceDto>(user); // map the user to UserResponceDto
                                                               //must add mapper
             return Ok(userDto);
+        }
+
+
+
+        [HttpGet("{id}/User-Task")]
+        public async Task<IActionResult> GetUserTask(Guid id)
+        {
+            var user = await _userServices.GetUserTask(id);
+            if (user is null) return NotFound("User not found");
+            var userDto = _mapper.Map<UserResponceDto>(user);
+            var userTask = _mapper.Map<List<TaskResponceDto>>(user.Tasks);
+
+            var response = new UserTasksResponseDto() // we can do it in mapper by specify the member for it
+            {
+                User = userDto,
+                Tasks = userTask
+            }; // map the user to UserResponceDto
+               //must add mapper
+            return Ok(response);
         }
 
 
