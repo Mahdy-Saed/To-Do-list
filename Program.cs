@@ -67,12 +67,12 @@ builder.Services.AddAuthentication(options =>
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"🔴 Authentication failed: {context.Exception.GetType().Name} - {context.Exception.Message}");
+            Console.WriteLine($" Authentication failed: {context.Exception.GetType().Name} - {context.Exception.Message}");
             return Task.CompletedTask;
         },
         OnTokenValidated = context =>
         {
-            Console.WriteLine($"✅ Token validated for: {context.Principal.Identity?.Name}");
+            Console.WriteLine($" Token validated for: {context.Principal.Identity?.Name}");
             return Task.CompletedTask;
         }
     };
